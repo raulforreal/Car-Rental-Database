@@ -1,0 +1,351 @@
+--The database models a Car Rental System.
+--It tracks cars, customers, rentals, reservations, and employees.
+--Cars can be rented or reserved by customers.
+--Employees manage rentals and car maintenance.
+--Payments and insurance policies are associated with rentals.
+--Manufacturers supply Parts for car maintenance.
+
+
+
+
+
+DROP DATABASE IF EXISTS CarRentalSystem;
+
+CREATE DATABASE CarRentalSystem;
+
+DROP TABLE IF EXISTS Parts CASCADE;
+DROP TABLE IF EXISTS Manufacturer CASCADE;
+DROP TABLE IF EXISTS CarMaintenance CASCADE;
+DROP TABLE IF EXISTS InsurancePolicies CASCADE;
+DROP TABLE IF EXISTS Payments CASCADE;
+DROP TABLE IF EXISTS Employees CASCADE;
+DROP TABLE IF EXISTS Reservations CASCADE;
+DROP TABLE IF EXISTS Rentals CASCADE;
+DROP TABLE IF EXISTS Customers CASCADE;
+DROP TABLE IF EXISTS Cars CASCADE;
+
+
+CREATE TABLE Cars (
+    CarID INT PRIMARY KEY,
+    Make VARCHAR(50),
+    Model VARCHAR(50),
+    Year INT,
+    Color VARCHAR(20),
+    DailyRate DECIMAL(8, 2),
+    Availability VARCHAR(20),
+    ManufacturerID INT,
+    PolicyID INT
+    
+);
+
+CREATE TABLE Customers (
+    CustomerID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    Address VARCHAR(200),
+    EmployeeID INT
+    
+);
+
+CREATE TABLE Rentals (
+    RentalID INT PRIMARY KEY,
+    CarID INT,
+    CustomerID INT,
+    RentalStartDate DATE,
+    RentalEndDate DATE,
+    TotalCost DECIMAL(8, 2),
+    ReservationID INT,
+    FOREIGN KEY (CarID) REFERENCES Cars(CarID)  ON DELETE RESTRICT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE RESTRICT
+   
+ );
+
+CREATE TABLE Reservations (
+    ReservationID INT PRIMARY KEY,
+    CarID INT,
+    CustomerID INT,
+    ReservationStartDate DATE,
+    ReservationEndDate DATE,
+    FOREIGN KEY (CarID) REFERENCES Cars(CarID) ON DELETE RESTRICT,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE RESTRICT
+    
+);
+
+CREATE TABLE Employees (
+    EmployeeID INT PRIMARY KEY,
+    FirstName VARCHAR(50),
+    LastName VARCHAR(50),
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    Position VARCHAR(50),
+    HourlyRate DECIMAL(6, 2)
+   
+);
+
+CREATE TABLE Payments (
+    PaymentID INT PRIMARY KEY,
+    RentalID INT,
+    PaymentDate DATE,
+    Amount DECIMAL(8, 2),
+    FOREIGN KEY (RentalID) REFERENCES Rentals(RentalID) ON DELETE RESTRICT,
+    CHECK (Amount > 0)
+
+);
+
+CREATE TABLE InsurancePolicies (
+    PolicyID INT PRIMARY KEY,
+    PolicyName VARCHAR(50),
+    CoverageDescription VARCHAR(200),
+    PremiumAmount DECIMAL(8, 2),
+    PolicyStartDate DATE,
+    PolicyEndDate DATE,
+    CHECK (PolicyStartDate < PolicyEndDate)
+    
+);
+
+CREATE TABLE CarMaintenance (
+    MaintenanceID INT PRIMARY KEY,
+    CarID INT,
+    MaintenanceDate DATE,
+    Description VARCHAR(200),
+    Cost DECIMAL(8, 2),
+    EmployeeID INT,
+    FOREIGN KEY (CarID) REFERENCES Cars(CarID) ON DELETE RESTRICT,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID) ON DELETE RESTRICT
+   
+);
+
+CREATE TABLE Manufacturer (
+    ManufacturerID INT PRIMARY KEY,
+    Name VARCHAR(100),
+    ContactName VARCHAR(100),
+    Email VARCHAR(100),
+    Phone VARCHAR(20),
+    Address VARCHAR(200)
+    
+);
+
+CREATE TABLE Parts (
+    PartID INT PRIMARY KEY,
+    ManufacturerID INT,
+    PartName VARCHAR(100),
+    PricePerUnit DECIMAL(8, 2),
+    FOREIGN KEY (ManufacturerID) REFERENCES Manufacturer(ManufacturerID) 
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+   
+);
+
+CREATE TABLE CustomerEmployeeRelationship (
+    CustomerID INT,
+    EmployeeID INT,
+    PRIMARY KEY (CustomerID, EmployeeID),
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID) ON DELETE RESTRICT,
+    FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID)ON DELETE CASCADE
+);
+
+ALTER TABLE Cars
+ADD FOREIGN KEY (ManufacturerID) REFERENCES Manufacturer(ManufacturerID);
+
+ALTER TABLE Cars
+ADD FOREIGN KEY (PolicyID) REFERENCES InsurancePolicies(PolicyID);
+
+ALTER TABLE Customers
+ADD FOREIGN KEY (EmployeeID) REFERENCES Employees(EmployeeID);
+
+ALTER TABLE Rentals
+ADD FOREIGN KEY (ReservationID) REFERENCES Reservations(ReservationID);
+
+--ALTER TABLE Payments
+--ADD CONSTRAINT CostGreaterThanZero CHECK (Amount > 0);
+
+-- ALTER TABLE InsurancePolicies
+-- ADD CONSTRAINT StartDateGreaterThanEndDate CHECK (PolicyStartDate < PolicyEndDate);
+
+
+
+-- Manufacturer
+INSERT INTO Manufacturer (ManufacturerID, Name, ContactName, Email, Phone, Address)
+VALUES
+    (1, 'AutoParts Inc.', 'John Vendor', 'vendor@gmail.com', '0488628282', '789 Supplier St'),
+    (2, 'CarMaintenance Co.', 'Caroline Vendor', 'caroline@gmail.com', '3821191442', '123 Service St'),
+    (3, 'AutoParts Pro', 'Steve Supplier', 'steve@gmail.com', '4114469853', '456 Supplier St'),
+    (4, 'CarCare Solutions', 'Emily Supplier', 'emily@gmail.com', '6411897805', '789 Service St'),
+    (5, 'AutoTech Parts', 'Michael Vendor', 'michael@gmail.com', '9133239425', '567 Parts St'),
+    (6, 'CarAccessories Ltd.', 'Lucy Vendor', 'lucy@gmail.com', '3476575356', '234 Accessory St'),
+    (7, 'AutoParts Plus', 'Jessica Vendor', 'jessica@gmail.com', '2896886131', '345 Auto St'),
+    (8, 'CarTech Inc.', 'Mark Supplier', 'mark@gmail.com', '2837062380', '567 Tech St'),
+    (9, 'AutoSolutions Ltd.', 'David Vendor', 'david@gmail.com', '1936855028', '789 Solutions St'),
+    (10, 'CarEssentials Co.', 'Sarah Supplier', 'sarah@gmail.com', '7153878019', '123 Essentials St');
+
+
+-- Insurance Policies
+INSERT INTO InsurancePolicies (PolicyID, PolicyName, CoverageDescription, PremiumAmount, PolicyStartDate, PolicyEndDate)
+VALUES
+    (1, 'Basic Coverage', 'Covers damage and theft', 10.00, '2022-10-25', '2023-10-25'),
+    (2, 'Premium Coverage', 'Comprehensive coverage', 20.00, '2022-10-10', '2023-11-10'),
+    (3, 'Premium Coverage', 'Comprehensive coverage', 20.00, '2022-10-10', '2023-11-10'),
+    (4, 'Premium Coverage', 'Comprehensive coverage', 20.00, '2022-10-10', '2023-11-10'),
+    (5, 'Extended Coverage', 'Additional protection for accidents', 30.00, '2022-11-05', '2023-11-05'),
+    (6, 'Basic Coverage', 'Covers damage and theft', 10.00, '2022-09-15', '2023-09-15'),
+    (7, 'Premium Plus', 'Comprehensive coverage with extras', 40.00, '2022-12-20', '2023-12-20'),
+    (8, 'Family Plan', 'Coverage for multiple family members', 50.00, '2022-11-01', '2023-11-01'),
+    (9, 'Business Coverage', 'Coverage for business use', 60.00, '2022-08-01', '2023-08-01'),
+    (10, 'Senior Driver Plan', 'Special plan for senior drivers', 25.00, '2022-07-10', '2023-07-10');
+
+
+
+-- Cars
+INSERT INTO Cars (CarID, Make, Model, Year, Color, DailyRate, Availability, ManufacturerID, PolicyID)
+VALUES
+    (1, 'Toyota', 'Camry', 2022, 'Silver', 45.99, 'Available', 1, 1),
+    (2, 'Honda', 'Civic', 2021, 'Blue', 42.99, 'Available', 2, 2),
+    (3, 'Ford', 'Escape', 2020, 'Red', 49.99, 'Rented', 1, 3),
+    (4, 'Chevrolet', 'Malibu', 2022, 'Black', 47.99, 'Available', 4, 4),
+    (5, 'Nissan', 'Altima', 2021, 'Gray', 44.99, 'Available', 2, 5),
+    (6, 'BMW', 'X5', 2023, 'Black', 99.99, 'Available', 6, 6),
+    (7, 'Tesla', 'Model 3', 2022, 'Blue', 79.99, 'Available', 8, 7),
+    (8, 'Subaru', 'Outback', 2022, 'Green', 65.99, 'Available', 8, 8),
+    (9, 'Mazda', 'CX-5', 2023, 'White', 71.99, 'Available', 3, 9),
+    (10, 'Kia', 'Sorento', 2023, 'Silver', 68.99, 'Available', 10, 10);
+
+-- Employees
+INSERT INTO Employees (EmployeeID, FirstName, LastName, Email, Phone, Position, HourlyRate)
+VALUES
+    (1, 'Emily', 'Johnson', 'emily@gmail.com', '9687215560', 'Manager', 25.00),
+    (2, 'Michael', 'Smith', 'michael@gmail.com', '8463491771', 'Sales Associate', 15.00),
+    (3, 'Olivia', 'Davis', 'olivia@gmail.com', '9996483538', 'Sales Associate', 14.00),
+    (4, 'Liam', 'Martinez', 'liam@gmail.com', '8561661240', 'Mechanic', 20.00),
+    (5, 'Emma', 'Hall', 'emma@gmail.com', '8556903557', 'Customer Service', 13.00),
+    (6, 'Noah', 'Adams', 'noah@gmail.com', '8725921974', 'Sales Associate', 14.00),
+    (7, 'Ava', 'Garcia', 'ava@gmail.com', '4693034752', 'Manager', 25.00),
+    (8, 'William', 'Brown', 'william@gmail.com', '1596498602', 'Mechanic', 19.00),
+    (9, 'Charlotte', 'Thomas', 'charlotte@gmail.com', '501941046', 'Customer Service', 13.00),
+    (10, 'Ethan', 'Wilson', 'ethan@gmail.com', '9508391054', 'Sales Associate', 15.00);
+
+
+-- Customers
+INSERT INTO Customers (CustomerID, FirstName, LastName, Email, Phone, Address, EmployeeID)
+VALUES
+    (1, 'John', 'Doe', 'john@gmail.com', '8564366227', '123 Main St', 1),
+    (2, 'Jane', 'Smith', 'jane@gmail.com', '1402867463', '456 Elm St', 2),
+    (3, 'Olivia', 'Davis', 'olivia@gmail.com', '7798982908', 'Sales Associate', 4),
+    (4, 'Liam', 'Martinez', 'liam@gmail.com', '2057074570', 'Mechanic', 5),
+    (5, 'Emma', 'Hall', 'emma@gmail.com', '0864927265', 'Customer Service', 3),
+    (6, 'Noah', 'Adams', 'noah@gmail.com', '8541828178', 'Sales Associate', 6),
+    (7, 'Ava', 'Garcia', 'ava@gmail.com', '7109221075', 'Manager', 7),
+    (8, 'William', 'Brown', 'william@gmail.com', '1131968113', 'Mechanic', 9),
+    (9, 'Charlotte', 'Thomas', 'charlotte@gmail.com', '5515064285', 'Customer Service', 8),
+    (10, 'Ethan', 'Wilson', 'ethan@gmail.com', '6109756916', 'Sales Associate', 10);
+
+-- CustomerEmployeeRelationship
+
+
+INSERT INTO CustomerEmployeeRelationship (CustomerID, EmployeeID)
+VALUES
+    (1, 5),  
+    (1, 2),  
+    (2, 1),  
+    (3, 4), 
+    (3, 3),
+    (4, 8),
+    (10, 6),
+    (5,7),
+    (9,9),
+    (6, 10);
+
+    
+
+
+-- Reservations
+INSERT INTO Reservations (ReservationID, CarID, CustomerID, ReservationStartDate, ReservationEndDate)
+VALUES
+    (1, 1, 1, '2023-03-08', '2023-03-12'),
+    (2, 2, 2, '2023-03-10', '2023-03-15'),
+    (3, 3, 3, '2023-03-12', '2023-03-18'),
+    (4, 4, 4, '2023-03-15', '2023-03-22'),
+    (5, 5, 5, '2023-03-20', '2023-03-25'),
+    (6, 6, 6, '2023-03-25', '2023-03-30'),
+    (7, 7, 7, '2023-04-01', '2023-04-07'),
+    (8, 8, 8, '2023-04-05', '2023-04-12'),
+    (9, 9, 9, '2023-04-10', '2023-04-16'),
+    (10, 10, 10, '2023-04-15', '2023-04-20');
+
+
+-- Rentals
+INSERT INTO Rentals (RentalID, CarID, CustomerID, RentalStartDate, RentalEndDate, TotalCost, ReservationID)
+VALUES
+    (1, 1, 1, '2023-03-01', '2023-03-05', 229.95, 1),
+    (2, 2, 2, '2023-03-02', '2023-03-06', 214.95, 2),
+    (3, 3, 3, '2023-03-08', '2023-03-12', 249.95, 3),
+    (4, 1, 4, '2023-03-10', '2023-03-15', 264.95, 4),
+    (5, 5, 5, '2023-03-15', '2023-03-20', 309.95, 5),
+    (6, 6, 6, '2023-03-18', '2023-03-23', 294.95, 6),
+    (7, 3, 7, '2023-03-25', '2023-03-30', 349.95, 7),
+    (8, 8, 8, '2023-03-28', '2023-04-02', 284.95, 8),
+    (9, 1, 9, '2023-04-05', '2023-04-10', 314.95, 9),
+    (10, 10, 10, '2023-04-08', '2023-04-13', 329.95, 10);
+
+
+-- Payments
+INSERT INTO Payments (PaymentID, RentalID, PaymentDate, Amount)
+VALUES
+    (1, 1, '2023-03-06', 229.95),
+    (2, 2, '2023-03-07', 214.95),
+    (3, 3, '2023-03-14', 249.95),
+    (4, 4, '2023-03-17', 264.95),
+    (5, 5, '2023-03-23', 309.95),
+    (6, 6, '2023-03-28', 294.95),
+    (7, 7, '2023-04-05', 349.95),
+    (8, 8, '2023-04-09', 284.95),
+    (9, 9, '2023-04-13', 314.95),
+    (10, 10, '2023-04-16', 329.95);
+
+-- Car Maintenance
+INSERT INTO CarMaintenance (MaintenanceID, CarID, MaintenanceDate, Description, Cost, EmployeeID)
+VALUES
+    (1, 1, '2023-02-15', 'Oil Change', 50.00, 1),
+    (2, 2, '2023-02-20', 'Brake Inspection', 75.00, 1),
+    (3, 3, '2023-03-01', 'Tire Rotation', 30.00, 2),
+    (4, 4, '2023-03-10', 'Engine Tune-Up', 120.00, 2),
+    (5, 5, '2023-03-20', 'Brake Pad Replacement', 80.00, 1),
+    (6, 6, '2023-03-25', 'AC System Service', 95.00, 1),
+    (7, 7, '2023-04-05', 'Transmission Flush', 150.00, 2),
+    (8, 8, '2023-04-12', 'Wheel Alignment', 60.00, 2);
+
+
+-- Parts
+INSERT INTO Parts (PartID, ManufacturerID, PartName, PricePerUnit)
+VALUES
+    (1, 1, 'Engine Oil', 5.00),
+    (2, 1, 'Brake Pads', 15.00),
+    (3, 2, 'Air Filter', 8.00),
+    (4, 2, 'Spark Plugs', 3.00),
+    (5, 3, 'Transmission Fluid', 11.00),
+    (6, 3, 'Battery', 50.00),
+    (7, 4, 'Brake Rotors', 37.00),
+    (8, 4, 'Ignition Coil', 12.00),
+    (9, 5, 'Tire Pressure Gauge', 13.00),
+    (10, 5, 'Cabin Air Filter', 9.00);
+
+-- View to display rental summary
+
+CREATE VIEW RentalSummaryView AS
+SELECT
+    R.RentalID,
+    C.CustomerID,
+    CONCAT(C.FirstName, ' ', C.LastName) AS CustomerName,
+    CR.Make AS CarMake,
+    CR.Model AS CarModel,
+    R.RentalStartDate,
+    R.RentalEndDate,
+    P.Amount AS PaymentAmount
+FROM Rentals AS R
+JOIN Customers AS C ON R.CustomerID = C.CustomerID
+JOIN Cars AS CR ON R.CarID = CR.CarID
+LEFT JOIN Payments AS P ON R.RentalID = P.RentalID;
+
+
+
